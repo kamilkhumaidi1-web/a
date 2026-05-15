@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Absensi | Modern Digital School</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --navy-primary: #0F172A;
+            --navy-secondary: #1E293B;
+            --accent-blue: #3B82F6;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .sidebar-item-active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 100%);
+            border-left: 4px solid var(--accent-blue);
+            color: #3B82F6 !important;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .btn-primary {
+            background-color: var(--navy-primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--navy-secondary);
+            transform: translateY(-1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <div id="app">
+        <!-- Loading State -->
+        <div id="loader" class="loading-overlay hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                <p class="text-sm font-semibold text-slate-700">Sinkronisasi Data...</p>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-[url('https://images.unsplash.com/photo-1544652478-6653e09f18a2?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+            <div class="max-w-md w-full glass-card rounded-3xl shadow-2xl p-10 relative z-10 border border-white/20">
+                <div class="text-center mb-10">
+                    <div class="bg-slate-900 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
+                        <i data-lucide="shield-check" class="text-blue-400 w-10 h-10"></i>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">E-Portal Absensi</h1>
+                    <p class="text-slate-500 mt-2 font-medium">Digital School Ecosystem & Services</p>
+                </div>
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username Pegawai</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i>
+                            <input type="text" id="username" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Masukkan username" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password Akses</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-3 top-3 w-5 h-5 text-slate-400"></i>
+                            <input type="password" id="password" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full btn-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+                        Masuk ke Dashboard
+                    </button>
+                    <p class="text-center text-xs text-slate-400 mt-6">Versi 2.0.4 • Hubungi IT Support jika kendala</p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div id="main-layout" class="hidden min-h-screen flex flex-col md:row overflow-hidden bg-slate-50">
+            <!-- Sidebar -->
+            <aside class="w-full md:w-72 bg-slate-900 text-white flex-shrink-0 flex flex-col">
+                <div class="p-8 flex items-center gap-4">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i data-lucide="graduation-cap" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-xl tracking-tighter block leading-none">SISKO</span>
+                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Digital Service</span>
+                    </div>
+                </div>
+                
+                <div class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Menu Utama</p>
+                    <nav class="space-y-1.5" id="sidebar-nav"></nav>
+                </div>
+
+                <div class="mt-auto p-6">
+                    <div class="bg-slate-800/50 rounded-2xl p-4 mb-4 border border-slate-700/50">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div id="status-indicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span class="text-xs font-medium text-slate-300">Server Online</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 leading-relaxed">Sistem sinkronisasi otomatis aktif dengan Google Spreadsheet.</p>
+                    </div>
+                    <button onclick="logout()" class="flex items-center gap-3 text-rose-400 hover:bg-rose-500/10 w-full p-3 rounded-xl transition font-semibold text-sm">
+                        <i data-lucide="power" class="w-5 h-5"></i>
+                        <span>Keluar Sistem</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto flex flex-col">
+                <!-- Top Navbar -->
+                <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-50">
+                    <div>
+                        <h2 id="page-title" class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h2>
+                        <nav class="flex text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5" aria-label="Breadcrumb">
+                            <ol class="list-none p-0 inline-flex">
+                                <li class="flex items-center">Admin</li>
+                                <li class="flex items-center mx-2"><i data-lucide="chevron-right" class="w-3 h-3"></i></li>
+                                <li class="text-blue-600" id="breadcrumb-page">Dashboard</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <div class="hidden lg:flex flex-col text-right">
+                            <span id="user-display" class="font-bold text-slate-900 leading-none">Administrator</span>
+                            <span id="role-display" class="text-[10px] text-blue-600 font-black uppercase mt-1 tracking-tighter">Kepala IT Sekolah</span>
+                        </div>
+                        <div class="h-12 w-12 rounded-2xl bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden ring-2 ring-slate-50">
+                            <img src="https://ui-avatars.com/api/?name=Admin&background=0F172A&color=fff" id="user-avatar" alt="Avatar">
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Page Container -->
+                <div class="p-8 lg:p-10 max-w-7xl mx-auto w-full" id="content-container">
+                    <!-- Content will be injected here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI API ---
+        const SCRIPT_URL = ""; 
+
+        let currentUser = null;
+        let activePage = 'dashboard';
+        let dataStore = {
+            users: [],
+            classes: [],
+            students: [],
+            attendance: [],
+            settings: { academicYear: "2024/2025 - Ganjil" }
+        };
+
+        let currentAbsenData = {};
+
+        function init() {
+            lucide.createIcons();
+            const savedUser = localStorage.getItem('absensi_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainLayout();
+            }
+        }
+
+        async function login(e) {
+            e.preventDefault();
+            const userVal = document.getElementById('username').value;
+            const passVal = document.getElementById('password').value;
+
+            showLoader(true);
+            setTimeout(() => {
+                showLoader(false);
+                if ((userVal === 'admin' && passVal === 'admin') || (userVal === 'guru' && passVal === 'guru')) {
+                    currentUser = {
+                        username: userVal,
+                        role: userVal === 'admin' ? 'admin' : 'guru',
+                        name: userVal === 'admin' ? 'Administrator' : 'Bp. Budi Santoso, S.Pd'
+                    };
+                    localStorage.setItem('absensi_user', JSON.stringify(currentUser));
+                    showMainLayout();
+                } else {
+                    alert('Data tidak ditemukan dalam database pelayanan.');
+                }
+            }, 1000);
+        }
+
+        function logout() {
+            localStorage.removeItem('absensi_user');
+            location.reload();
+        }
+
+        function showMainLayout() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-layout').classList.remove('hidden');
+            document.getElementById('main-layout').style.display = 'flex';
+            document.getElementById('user-display').innerText = currentUser.name;
+            document.getElementById('role-display').innerText = currentUser.role === 'admin' ? 'Administrator Sistem' : 'Guru Pengajar';
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=0F172A&color=fff`;
+            renderSidebar();
+            navigate('dashboard');
+        }
+
+        function renderSidebar() {
+            const nav = document.getElementById('sidebar-nav');
+            const menu = [
+                { id: 'dashboard', label: 'Dashboard', icon: 'grid-2x2', roles: ['admin', 'guru'] },
+                { id: 'absensi', label: 'Input Absensi', icon: 'edit-3', roles: ['admin', 'guru'] },
+                { id: 'rekap', label: 'Rekap Kehadiran', icon: 'file-bar-chart', roles: ['admin', 'guru'] },
+                { id: 'kelas', label: 'Kelola Kelas', icon: 'folder-kanban', roles: ['admin'] },
+                { id: 'siswa', label: 'Data Siswa', icon: 'contact-2', roles: ['admin'] },
+                { id: 'users', label: 'Pengguna', icon: 'users', roles: ['admin'] },
+            ];
+
+            nav.innerHTML = menu
+                .filter(item => item.roles.includes(currentUser.role))
+                .map(item => `
+                    <button onclick="navigate('${item.id}')" class="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition group font-semibold text-sm ${activePage === item.id ? 'sidebar-item-active' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}">
+                        <i data-lucide="${item.icon}" class="w-5 h-5 ${activePage === item.id ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'}"></i>
+                        <span>${item.label}</span>
+                    </button>
+                `).join('');
+            lucide.createIcons();
+        }
+
+        function navigate(page) {
+            activePage = page;
+            renderSidebar();
+            const container = document.getElementById('content-container');
+            const breadcrumb = document.getElementById('breadcrumb-page');
+            const pageTitle = document.getElementById('page-title');
+            
+            const titles = {
+                dashboard: "Dashboard Utama",
+                absensi: "Form Absensi Digital",
+                rekap: "Laporan & Rekapitulasi",
+                kelas: "Manajemen Kelas",
+                siswa: "Database Siswa",
+                users: "Manajemen Pengguna"
+            };
+
+            pageTitle.innerText = titles[page];
+            breadcrumb.innerText = titles[page];
+
+            switch(page) {
+                case 'dashboard': renderDashboard(container); break;
+                case 'absensi': renderAbsensi(container); break;
+                case 'rekap': renderRekap(container); break;
+                case 'kelas': renderKelas(container); break;
+                case 'siswa': renderSiswa(container); break;
+                case 'users': renderUsers(container); break;
+            }
+        }
+
+        function renderDashboard(container) {
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Total Siswa</h3>
+                        <p class="text-3xl font-black text-slate-900 tracking-tight">1.248</p>
+                        <div class="mt-4 flex items-center text-xs font-bold text-emerald-500">
+                            <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +12 Siswa Baru
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i data-lucide="user-check" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Hadir (Hari Ini)</h3>
+                        <p class="text-3xl font-black text-slate-900 tracking-tight">1.192</p>
+                        <div class="mt-4 flex items-center text-xs font-bold text-slate-400">
+                            Sesuai data input terakhir
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Izin/Sakit</h3>
+                        <p class="text-3xl font-black text-slate-900 tracking-tight">34</p>
+                        <div class="mt-4 flex items-center text-xs font-bold text-amber-500">
+                            Memerlukan verifikasi berkas
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i data-lucide="user-x" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Alpa (Tanpa Ket)</h3>
+                        <p class="text-3xl font-black text-slate-900 tracking-tight">22</p>
+                        <div class="mt-4 flex items-center text-xs font-bold text-rose-500">
+                            <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> Perhatian Khusus
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="font-bold text-lg text-slate-900">Grafik Kehadiran Mingguan</h3>
+                            <select class="text-xs font-bold border rounded-lg px-3 py-1.5 outline-none bg-slate-50">
+                                <option>Mei 2024</option>
+                            </select>
+                        </div>
+                        <div class="h-64 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 font-medium italic">
+                            Grafik statistik akan muncul setelah sinkronisasi spreadsheet
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <h3 class="font-bold text-lg mb-2">Layanan Informasi</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed mb-6">Tahun Ajaran <span class="text-blue-400">${dataStore.settings.academicYear}</span>. Pastikan absensi dilakukan sebelum jam 09:00 WIB untuk validasi data harian.</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><i data-lucide="bell" class="w-4 h-4"></i></div>
+                                    <span class="text-xs font-medium">Notifikasi Orang Tua Aktif</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400"><i data-lucide="database" class="w-4 h-4"></i></div>
+                                    <span class="text-xs font-medium">Backup Harian Aman</span>
+                                </div>
+                            </div>
+                        </div>
+                        <i data-lucide="graduation-cap" class="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 group-hover:scale-110 transition-transform duration-700"></i>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderAbsensi(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 bg-slate-50/50">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pilih Ruang Kelas</label>
+                                <select id="sel-class" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl font-semibold shadow-sm focus:ring-2 focus:ring-blue-500 transition outline-none" onchange="loadStudentGrid()">
+                                    <option value="">-- Pilih Kelas --</option>
+                                    <option>X MIPA 1</option><option>X MIPA 2</option><option>XI IPS 1</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal Laporan</label>
+                                <input type="date" id="absen-date" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl font-semibold shadow-sm outline-none" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            <div class="flex items-end">
+                                <div class="w-full bg-blue-50 p-4 rounded-xl flex items-center gap-3 border border-blue-100">
+                                    <i data-lucide="info" class="text-blue-500 w-5 h-5"></i>
+                                    <p class="text-[10px] font-bold text-blue-700 uppercase leading-tight">Data akan langsung dikirim ke Cloud Server</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8">
+                        <div id="student-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div class="col-span-full py-20 text-center">
+                                <div class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                    <i data-lucide="search" class="text-slate-300 w-10 h-10"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900">Belum Ada Data</h4>
+                                <p class="text-sm text-slate-500">Pilih kelas di atas untuk menampilkan daftar siswa.</p>
+                            </div>
+                        </div>
+                        
+                        <div id="absen-footer" class="mt-12 flex flex-col md:row justify-between items-center gap-6 hidden pt-8 border-t border-slate-100">
+                            <div class="flex gap-4">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-emerald-500"></div><span class="text-xs font-bold text-slate-500 uppercase">Hadir</span></div>
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div><span class="text-xs font-bold text-slate-500 uppercase">Izin</span></div>
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-rose-500"></div><span class="text-xs font-bold text-slate-500 uppercase">Alpa</span></div>
+                            </div>
+                            <button onclick="saveAbsensi()" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95 flex items-center gap-2">
+                                <i data-lucide="save" class="w-5 h-5"></i> Simpan Laporan Hari Ini
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function loadStudentGrid() {
+            const className = document.getElementById('sel-class').value;
+            const grid = document.getElementById('student-grid');
+            const footer = document.getElementById('absen-footer');
+            
+            if (!className) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center">Pilih kelas di atas.</div>`;
+                footer.classList.add('hidden');
+                return;
+            }
+
+            const students = [
+                { nis: '2024001', name: 'Ahmad Faiz M.' },
+                { nis: '2024002', name: 'Bunga Citra L.' },
+                { nis: '2024003', name: 'Cahyo Ginanjar' },
+                { nis: '2024004', name: 'Dian Sastrow' },
+                { nis: '2024005', name: 'Eka Kurniawan' }
+            ];
+
+            grid.innerHTML = students.map(s => `
+                <div class="group p-5 bg-white border border-slate-200 rounded-3xl hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-md relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="user" class="w-12 h-12"></i>
+                    </div>
+                    <div class="mb-5">
+                        <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg uppercase tracking-widest">${s.nis}</span>
+                        <h4 class="font-bold text-slate-900 mt-2 line-clamp-1">${s.name}</h4>
+                        <p id="status-text-${s.nis}" class="text-[11px] font-bold text-slate-400 uppercase mt-1">Belum Terdata</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="markStatus('${s.nis}', 'H')" class="p-2 rounded-xl border border-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-black text-xs transition-colors">H</button>
+                        <button onclick="markStatus('${s.nis}', 'I')" class="p-2 rounded-xl border border-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 font-black text-xs transition-colors">I</button>
+                        <button onclick="markStatus('${s.nis}', 'S')" class="p-2 rounded-xl border border-slate-100 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 font-black text-xs transition-colors">S</button>
+                        <button onclick="markStatus('${s.nis}', 'A')" class="p-2 rounded-xl border border-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 font-black text-xs transition-colors">A</button>
+                    </div>
+                </div>
+            `).join('');
+            footer.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function markStatus(nis, status) {
+            const text = document.getElementById(`status-text-${nis}`);
+            const labels = { 'H': 'HADIR', 'I': 'IZIN', 'S': 'SAKIT', 'A': 'ALPA' };
+            const colors = { 'H': 'text-emerald-600', 'I': 'text-blue-600', 'S': 'text-amber-600', 'A': 'text-rose-600' };
+            
+            text.innerText = labels[status];
+            text.className = `text-[11px] font-black uppercase mt-1 ${colors[status]}`;
+        }
+
+        function saveAbsensi() {
+            showLoader(true);
+            setTimeout(() => {
+                showLoader(false);
+                alert("Laporan absensi telah berhasil disinkronkan ke pusat data.");
+                navigate('dashboard');
+            }, 1200);
+        }
+
+        function renderRekap(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex gap-4 w-full md:w-auto">
+                            <select class="p-3 border border-slate-200 rounded-xl font-semibold text-sm outline-none bg-slate-50"><option>Tahun 2024</option></select>
+                            <select class="p-3 border border-slate-200 rounded-xl font-semibold text-sm outline-none bg-slate-50"><option>Bulan Mei</option></select>
+                        </div>
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <button class="flex-1 md:flex-none px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition">Print PDF</button>
+                            <button class="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/10"><i data-lucide="download" class="w-4 h-4"></i> Export Excel</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b">Nama Lengkap Siswa</th>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b text-center">Hadir</th>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b text-center">Izin</th>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b text-center">Sakit</th>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b text-center">Alpa</th>
+                                    <th class="p-5 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b text-center">Rasio</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="p-5">
+                                        <p class="font-bold text-slate-900">Ahmad Faiz M.</p>
+                                        <p class="text-[10px] font-bold text-slate-400">X MIPA 1</p>
+                                    </td>
+                                    <td class="p-5 text-center font-bold">18</td>
+                                    <td class="p-5 text-center font-bold">2</td>
+                                    <td class="p-5 text-center font-bold">0</td>
+                                    <td class="p-5 text-center font-bold text-rose-500">0</td>
+                                    <td class="p-5 text-center">
+                                        <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">96%</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderKelas(container) {
+            container.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest">Total 12 Ruang Kelas</p>
+                    <button class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl shadow-slate-900/20 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrasi Kelas Baru
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${[1, 2, 3].map(i => `
+                        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-xl italic shadow-inner">X</div>
+                                <div class="flex gap-2">
+                                    <button class="p-2 rounded-lg bg-slate-50 text-slate-400 hover:text-blue-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                    <button class="p-2 rounded-lg bg-slate-50 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                            <h4 class="font-black text-2xl text-slate-900 tracking-tight">X MIPA ${i}</h4>
+                            <p class="text-slate-500 text-sm font-medium mt-1">Wali Kelas: Drs. Budi Santoso</p>
+                            <div class="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">32 Siswa Terdaftar</span>
+                                <span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded uppercase">Aktif</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderSiswa(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col items-center justify-center text-center">
+                    <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                        <i data-lucide="database" class="w-10 h-10 text-slate-300"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-2">Modul Data Siswa</h3>
+                    <p class="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">Silakan akses menu ini untuk menambah, mengubah, atau menonaktifkan data siswa dari basis data sekolah.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderUsers(container) {
+             container.innerHTML = `
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col items-center justify-center text-center">
+                    <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                        <i data-lucide="shield-check" class="w-10 h-10 text-slate-300"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-2">Manajemen Keamanan Akun</h3>
+                    <p class="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">Hanya administrator tingkat tinggi yang dapat mengakses modul pengaturan hak akses pegawai.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function showLoader(show) {
+            document.getElementById('loader').classList.toggle('hidden', !show);
+        }
+
+        document.getElementById('login-form').addEventListener('submit', login);
+        window.onload = init;
+    </script>
+</body>
+</html>
