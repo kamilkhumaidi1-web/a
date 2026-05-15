@@ -121,6 +121,17 @@
                     <nav class="space-y-1" id="sidebar-nav"></nav>
                 </div>
 
+                <!-- Server Status (Sesuai Screenshot) -->
+                <div class="px-6 mb-4">
+                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Server Online</span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 leading-relaxed">Sistem sinkronisasi otomatis aktif dengan Google Spreadsheet.</p>
+                    </div>
+                </div>
+
                 <div class="p-6 border-t border-slate-800">
                     <button onclick="logout()" class="flex items-center gap-3 text-rose-400 hover:bg-rose-500/10 w-full p-3 rounded-xl transition font-semibold text-sm">
                         <i data-lucide="power" class="w-4 h-4"></i>
@@ -151,7 +162,9 @@
                     </div>
                 </header>
 
-                <div id="content-container" class="flex-1 overflow-y-auto p-8"></div>
+                <div id="content-container" class="flex-1 overflow-y-auto p-8">
+                    <!-- Area konten akan diisi oleh JS -->
+                </div>
             </main>
         </div>
     </div>
@@ -160,23 +173,22 @@
         let currentUser = null;
         let activePage = 'dashboard';
 
-        // Helper untuk menjalankan Lucide dengan aman
+        // Fungsi refresh icon yang lebih robust
         function refreshIcons() {
-            if (window.lucide) {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 window.lucide.createIcons();
             } else {
-                console.warn('Lucide belum dimuat. Mencoba lagi dalam 500ms...');
-                setTimeout(refreshIcons, 500);
+                setTimeout(refreshIcons, 100);
             }
         }
 
         window.onload = () => {
-            refreshIcons();
             const savedUser = localStorage.getItem('absensi_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 showMainLayout();
             }
+            refreshIcons();
         };
 
         function handleLogin(e) {
@@ -204,14 +216,16 @@
 
         function showMainLayout() {
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-layout').classList.remove('hidden');
-            document.getElementById('main-layout').style.display = 'flex';
+            const layout = document.getElementById('main-layout');
+            layout.classList.remove('hidden');
+            layout.style.display = 'flex';
             
             document.getElementById('user-display').innerText = currentUser.name;
             document.getElementById('role-display').innerText = currentUser.role === 'admin' ? 'Administrator Sistem' : 'Guru Pengajar';
             document.getElementById('user-initial').innerText = currentUser.name.charAt(0);
             
             renderSidebar();
+            // Memastikan navigasi ke dashboard dipanggil
             navigate('dashboard');
         }
 
@@ -260,6 +274,8 @@
 
             pageTitle.innerText = titles[page];
             breadcrumb.innerText = titles[page];
+            
+            // Tampilkan loader sebentar untuk efek transisi
             container.innerHTML = `<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div></div>`;
 
             setTimeout(() => {
@@ -267,13 +283,18 @@
                 void container.offsetWidth; 
                 container.classList.add('page-fade-in');
 
-                switch(page) {
-                    case 'dashboard': renderDashboard(container); break;
-                    case 'absensi': renderAbsensi(container); break;
-                    case 'rekap': renderRekap(container); break;
-                    default: renderPlaceholder(container, titles[page]); break;
+                // Logika render konten
+                if (page === 'dashboard') {
+                    renderDashboard(container);
+                } else if (page === 'absensi') {
+                    renderAbsensi(container);
+                } else if (page === 'rekap') {
+                    renderRekap(container);
+                } else {
+                    renderPlaceholder(container, titles[page]);
                 }
-            }, 100);
+                refreshIcons();
+            }, 300);
         }
 
         function renderDashboard(container) {
@@ -287,10 +308,12 @@
                 <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                     <h3 class="font-bold text-lg mb-4 text-slate-900">Aktivitas Terbaru</h3>
                     <div class="space-y-4">
-                        ${[1,2,3].map((n) => `
+                        ${[1, 2, 3].map((n) => `
                             <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm"><i data-lucide="check" class="text-emerald-500 w-5 h-5"></i></div>
+                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                                        <i data-lucide="check-circle" class="text-emerald-500 w-5 h-5"></i>
+                                    </div>
                                     <div>
                                         <p class="font-bold text-sm text-slate-900">Absensi Kelas X MIPA ${n} Selesai</p>
                                         <p class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Oleh: Bp. Budi • ${n * 5} Menit Lalu</p>
@@ -302,7 +325,6 @@
                     </div>
                 </div>
             `;
-            refreshIcons();
         }
 
         function createStatCard(label, val, icon, color) {
@@ -313,7 +335,7 @@
                 rose: 'bg-rose-50 text-rose-600'
             };
             return `
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-transform hover:scale-[1.02]">
                     <div class="w-10 h-10 ${colors[color]} rounded-xl flex items-center justify-center mb-4">
                         <i data-lucide="${icon}" class="w-5 h-5"></i>
                     </div>
@@ -329,9 +351,10 @@
                     <div class="p-6 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4">
                         <div class="flex-1 min-w-[200px]">
                             <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pilih Kelas</label>
-                            <select class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none" onchange="loadStudentList()">
+                            <select id="select-kelas" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none" onchange="loadStudentList()">
                                 <option value="">-- Pilih Kelas --</option>
-                                <option>X MIPA 1</option><option>X MIPA 2</option>
+                                <option>X MIPA 1</option>
+                                <option>X MIPA 2</option>
                             </select>
                         </div>
                         <div class="flex-1 min-w-[200px]">
@@ -344,11 +367,13 @@
                     </div>
                 </div>
             `;
-            refreshIcons();
         }
 
         function loadStudentList() {
             const list = document.getElementById('student-list');
+            const kelas = document.getElementById('select-kelas').value;
+            if (!kelas) return;
+
             const mockStudents = [
                 { nis: '101', name: 'ADITYA PRATAMA' },
                 { nis: '102', name: 'BELLA SAFIRA' },
@@ -383,7 +408,7 @@
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="font-bold text-slate-900">Laporan Bulanan</h3>
-                        <button class="text-blue-600 font-bold text-xs">UNDUH EXCEL</button>
+                        <button class="text-blue-600 font-bold text-xs hover:underline">UNDUH EXCEL</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
@@ -421,7 +446,6 @@
                     <p class="text-slate-500 text-sm mt-2">Fungsi ini sedang disiapkan untuk rilis berikutnya.</p>
                 </div>
             `;
-            refreshIcons();
         }
     </script>
 </body>
