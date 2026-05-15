@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Absensi | Modern Digital School</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <!-- Memuat Lucide Icons dengan defer untuk memastikan DOM siap -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -50,7 +51,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Animasi Transisi Konten */
         .page-fade-in {
             animation: fadeIn 0.4s ease-out forwards;
         }
@@ -105,7 +105,6 @@
 
         <!-- Layout Utama -->
         <div id="main-layout" class="hidden h-screen flex overflow-hidden">
-            <!-- Sidebar -->
             <aside class="w-72 bg-slate-900 text-white flex-shrink-0 flex flex-col">
                 <div class="p-8 flex items-center gap-3">
                     <div class="bg-blue-600 p-2 rounded-lg">
@@ -130,7 +129,6 @@
                 </div>
             </aside>
 
-            <!-- Area Konten -->
             <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
                 <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
                     <div>
@@ -153,9 +151,7 @@
                     </div>
                 </header>
 
-                <div id="content-container" class="flex-1 overflow-y-auto p-8">
-                    <!-- Konten dinamis akan masuk ke sini -->
-                </div>
+                <div id="content-container" class="flex-1 overflow-y-auto p-8"></div>
             </main>
         </div>
     </div>
@@ -164,9 +160,18 @@
         let currentUser = null;
         let activePage = 'dashboard';
 
-        // Inisialisasi awal
+        // Helper untuk menjalankan Lucide dengan aman
+        function refreshIcons() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            } else {
+                console.warn('Lucide belum dimuat. Mencoba lagi dalam 500ms...');
+                setTimeout(refreshIcons, 500);
+            }
+        }
+
         window.onload = () => {
-            lucide.createIcons();
+            refreshIcons();
             const savedUser = localStorage.getItem('absensi_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -200,6 +205,7 @@
         function showMainLayout() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-layout').classList.remove('hidden');
+            document.getElementById('main-layout').style.display = 'flex';
             
             document.getElementById('user-display').innerText = currentUser.name;
             document.getElementById('role-display').innerText = currentUser.role === 'admin' ? 'Administrator Sistem' : 'Guru Pengajar';
@@ -211,6 +217,8 @@
 
         function renderSidebar() {
             const nav = document.getElementById('sidebar-nav');
+            if (!nav) return;
+
             const menu = [
                 { id: 'dashboard', label: 'Dashboard', icon: 'grid', roles: ['admin', 'guru'] },
                 { id: 'absensi', label: 'Input Absensi', icon: 'clipboard-list', roles: ['admin', 'guru'] },
@@ -228,7 +236,7 @@
                         <span>${item.label}</span>
                     </button>
                 `).join('');
-            lucide.createIcons();
+            refreshIcons();
         }
 
         function navigate(page) {
@@ -239,6 +247,8 @@
             const breadcrumb = document.getElementById('breadcrumb-page');
             const pageTitle = document.getElementById('page-title');
             
+            if (!container) return;
+
             const titles = {
                 dashboard: "Dashboard Utama",
                 absensi: "Input Absensi Harian",
@@ -252,10 +262,9 @@
             breadcrumb.innerText = titles[page];
             container.innerHTML = `<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div></div>`;
 
-            // Simulasi loading konten
             setTimeout(() => {
                 container.classList.remove('page-fade-in');
-                void container.offsetWidth; // Trigger reflow
+                void container.offsetWidth; 
                 container.classList.add('page-fade-in');
 
                 switch(page) {
@@ -264,7 +273,7 @@
                     case 'rekap': renderRekap(container); break;
                     default: renderPlaceholder(container, titles[page]); break;
                 }
-            }, 300);
+            }, 100);
         }
 
         function renderDashboard(container) {
@@ -278,13 +287,13 @@
                 <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                     <h3 class="font-bold text-lg mb-4 text-slate-900">Aktivitas Terbaru</h3>
                     <div class="space-y-4">
-                        ${[1,2,3].map(() => `
+                        ${[1,2,3].map((n) => `
                             <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm"><i data-lucide="check" class="text-emerald-500 w-5 h-5"></i></div>
                                     <div>
-                                        <p class="font-bold text-sm text-slate-900">Absensi Kelas X MIPA 1 Selesai</p>
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Oleh: Bp. Budi • 5 Menit Lalu</p>
+                                        <p class="font-bold text-sm text-slate-900">Absensi Kelas X MIPA ${n} Selesai</p>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Oleh: Bp. Budi • ${n * 5} Menit Lalu</p>
                                     </div>
                                 </div>
                                 <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">CLOUD SYNCED</span>
@@ -293,7 +302,7 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            refreshIcons();
         }
 
         function createStatCard(label, val, icon, color) {
@@ -335,7 +344,7 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            refreshIcons();
         }
 
         function loadStudentList() {
@@ -412,7 +421,7 @@
                     <p class="text-slate-500 text-sm mt-2">Fungsi ini sedang disiapkan untuk rilis berikutnya.</p>
                 </div>
             `;
-            lucide.createIcons();
+            refreshIcons();
         }
     </script>
 </body>
