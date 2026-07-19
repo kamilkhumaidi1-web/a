@@ -3,398 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Absensi | Modern Digital School</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>Setoran Hafalan</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        :root { --navy-primary: #0F172A; --navy-secondary: #1E293B; --accent-blue: #3B82F6; }
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; margin: 0; overflow: hidden; }
-        .sidebar-item-active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 100%); border-left: 4px solid var(--accent-blue); color: #3B82F6 !important; }
-        .page-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .modal-backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
-        .status-btn-active[data-status="H"] { background-color: #10B981; color: white; border-color: #10B981; }
-        .status-btn-active[data-status="I"] { background-color: #3B82F6; color: white; border-color: #3B82F6; }
-        .status-btn-active[data-status="S"] { background-color: #F59E0B; color: white; border-color: #F59E0B; }
-        .status-btn-active[data-status="A"] { background-color: #EF4444; color: white; border-color: #EF4444; }
+        :root {
+            --brand-blue: #0d6efd;
+            --brand-dark: #0043a8;
+            --bg-light: #f4f7fb;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-light);
+        }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom UI Elements */
+        .bg-brand { background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-dark) 100%); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .table-brand-header { background-color: var(--brand-blue); color: white; }
+        .btn-brand { background-color: var(--brand-blue); color: white; border-radius: 8px; font-weight: 500; transition: all 0.3s; }
+        .btn-brand:hover { background-color: var(--brand-dark); color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3); }
+        .form-control, .form-select { border-radius: 8px; border: 1px solid #dee2e6; padding: 0.6rem 1rem; }
+        .form-control:focus, .form-select:focus { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); border-color: var(--brand-blue); }
+        .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
     </style>
 </head>
-<body class="text-slate-900">
+<body>
 
-    <div id="app">
-        <!-- Overlay Loading -->
-        <div id="loader-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[3000] hidden flex justify-center items-center">
-            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
-                <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-4"></div>
-                <p class="text-sm font-bold text-slate-700">Memproses Data...</p>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-brand mb-4">
+                <li class="nav-item menu-admin d-none">
+                    <a class="nav-link" href="#" onclick="alert('Fitur kelola data admin bisa dikembangkan di sini!')">Kelola Data</a>
+                </li>
+            </ul>
+            <div class="d-flex">
+                <button id="btn-login-modal" class="btn btn-outline-light rounded-3 px-3 fw-medium" data-bs-toggle="modal" data-bs-target="#loginModal">Login Guru/Admin</button>
+                <button id="btn-logout" class="btn btn-danger rounded-3 px-4 fw-medium d-none">Logout</button>
             </div>
-        </div>
-
-        <!-- Modal CRUD (Universal) -->
-        <div id="crud-modal" class="fixed inset-0 z-[2500] modal-backdrop hidden flex justify-center items-center p-4">
-            <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden page-fade-in">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h3 id="modal-title" class="font-bold text-slate-900">Tambah Data</h3>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
-                </div>
-                <div class="p-6" id="modal-body"></div>
-                <div class="p-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button onclick="closeModal()" class="px-6 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition">Batal</button>
-                    <button id="modal-save-btn" class="px-6 py-2.5 text-sm font-bold bg-slate-900 text-white rounded-xl shadow-lg active:scale-95 transition">Simpan Data</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Layar Login -->
-        <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-slate-900 relative">
-            <div class="max-w-md w-full bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-10 relative z-10">
-                <div class="text-center mb-10">
-                    <div class="bg-slate-900 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <i data-lucide="shield-check" class="text-blue-400 w-8 h-8"></i>
-                    </div>
-                    <h1 class="text-2xl font-bold">E-Portal Absensi</h1>
-                    <p class="text-slate-500 mt-1 text-sm font-medium">Digital School Ecosystem</p>
-                </div>
-                <form onsubmit="handleLogin(event)" class="space-y-4">
-                    <input type="text" id="username" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Username" required>
-                    <input type="password" id="password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" required>
-                    <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg">Masuk</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Layout Utama -->
-        <div id="main-layout" class="hidden h-screen flex overflow-hidden">
-            <aside class="w-72 bg-slate-900 text-white flex-shrink-0 flex flex-col">
-                <div class="p-8 flex items-center gap-3">
-                    <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="graduation-cap"></i></div>
-                    <span class="font-black text-xl tracking-tighter uppercase">Sisko</span>
-                </div>
-                <p class="px-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Menu Utama</p>
-                <nav class="flex-1 px-4 space-y-1" id="sidebar-nav"></nav>
-                <div class="p-6 border-t border-slate-800">
-                    <div class="bg-slate-800/50 p-4 rounded-2xl mb-4 border border-slate-700/50">
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <span class="text-[10px] font-bold text-slate-300 uppercase">Server Online</span>
-                        </div>
-                        <p class="text-[9px] text-slate-500 leading-tight">Sistem sinkronisasi otomatis aktif dengan Google Spreadsheet.</p>
-                    </div>
-                    <button onclick="logout()" class="flex items-center gap-3 text-rose-400 hover:bg-rose-500/10 w-full p-3 rounded-xl transition text-sm font-bold">
-                        <i data-lucide="power" class="w-4 h-4"></i> Keluar Sistem
-                    </button>
-                </div>
-            </aside>
-
-            <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
-                <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
-                    <div>
-                        <h2 id="page-title" class="text-xl font-bold text-slate-900">Dashboard</h2>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                            <span id="breadcrumb-role">ADMIN</span> • <span id="breadcrumb-page" class="text-blue-600">DASHBOARD</span>
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="text-right">
-                            <p id="user-display" class="font-bold text-sm leading-none text-slate-900">User</p>
-                            <p id="role-display" class="text-[9px] text-blue-600 font-black uppercase mt-1">Role</p>
-                        </div>
-                        <div class="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold" id="user-initial">A</div>
-                    </div>
-                </header>
-                <div id="content-container" class="flex-1 overflow-y-auto p-8"></div>
-            </main>
         </div>
     </div>
+</nav>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
-        let currentUser = null;
-        let activePage = 'dashboard';
-        let attendanceData = {}; // Menyimpan sementara status absensi di memori
-
-        function refreshIcons() { if (window.lucide) window.lucide.createIcons(); }
-
-        function toggleLoader(show) { document.getElementById('loader-overlay').classList.toggle('hidden', !show); }
-
-        window.onload = () => {
-            const savedUser = localStorage.getItem('absensi_user');
-            if (savedUser) { currentUser = JSON.parse(savedUser); showMainLayout(); }
-            refreshIcons();
-        };
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const u = document.getElementById('username').value.toLowerCase();
-            if (u === 'admin' || u === 'guru') {
-                currentUser = { username: u, role: u, name: u === 'admin' ? 'Administrator Utama' : 'Guru Pengajar' };
-                localStorage.setItem('absensi_user', JSON.stringify(currentUser));
-                showMainLayout();
-            }
-        }
-
-        function logout() { localStorage.removeItem('absensi_user'); location.reload(); }
-
-        function showMainLayout() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-layout').classList.remove('hidden');
-            document.getElementById('main-layout').style.display = 'flex';
-            document.getElementById('user-display').innerText = currentUser.name;
-            document.getElementById('role-display').innerText = currentUser.role === 'admin' ? 'ADMINISTRATOR SISTEM' : 'GURU PENGAJAR';
-            document.getElementById('breadcrumb-role').innerText = currentUser.role.toUpperCase();
-            document.getElementById('user-initial').innerText = currentUser.name[0];
-            renderSidebar();
-            navigate('dashboard');
-        }
-
-        function renderSidebar() {
-            const menu = [
-                { id: 'dashboard', label: 'Dashboard', icon: 'grid', roles: ['admin', 'guru'] },
-                { id: 'absensi', label: 'Input Absensi', icon: 'clipboard-list', roles: ['admin', 'guru'] },
-                { id: 'rekap', label: 'Rekap Kehadiran', icon: 'bar-chart-3', roles: ['admin', 'guru'] },
-                { id: 'kelas', label: 'Kelola Kelas', icon: 'layers', roles: ['admin'] },
-                { id: 'siswa', label: 'Kelola Siswa', icon: 'users', roles: ['admin'] },
-                { id: 'pengguna', label: 'Manajemen User', icon: 'shield', roles: ['admin'] },
-            ];
-            document.getElementById('sidebar-nav').innerHTML = menu
-                .filter(m => m.roles.includes(currentUser.role))
-                .map(m => `
-                    <button onclick="navigate('${m.id}')" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-semibold text-sm ${activePage === m.id ? 'sidebar-item-active' : 'text-slate-400 hover:text-white'}">
-                        <i data-lucide="${m.icon}" class="w-4 h-4"></i> <span>${m.label}</span>
-                    </button>
-                `).join('');
-            refreshIcons();
-        }
-
-        function navigate(page) {
-            activePage = page;
-            renderSidebar();
-            const container = document.getElementById('content-container');
-            document.getElementById('page-title').innerText = page === 'absensi' ? 'INPUT ABSENSI' : page.toUpperCase();
-            document.getElementById('breadcrumb-page').innerText = page.toUpperCase();
-
-            if (page === 'dashboard') renderDashboard(container);
-            else if (page === 'absensi') renderAbsensi(container);
-            else if (page === 'rekap') renderRekap(container);
-            else if (page === 'kelas') renderKelasCRUD(container);
-            else if (page === 'siswa') renderSiswaCRUD(container);
-            else if (page === 'pengguna') renderUserCRUD(container);
-            
-            refreshIcons();
-        }
-
-        // --- DASHBOARD ---
-        function renderDashboard(container) {
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 page-fade-in">
-                    ${createStatCard('Total Siswa', '1.240', 'users', 'blue')}
-                    ${createStatCard('Hadir Hari Ini', '1.180', 'user-check', 'emerald')}
-                    ${createStatCard('Izin/Sakit', '42', 'info', 'amber')}
-                    ${createStatCard('Tanpa Keterangan', '18', 'user-x', 'rose')}
+<!-- Main Content Container -->
+<div class="container">
+    
+    <!-- PAGE: HOME (REKAPAN) -->
+    <div id="page-home" class="page active">
+        <h2 class="mb-4 fw-bold text-dark" style="color: #1e293b !important;">Rekapan Setoran Hafalan</h2>
+        
+        <div class="row mb-4 g-2">
+            <div class="col-md-4">
+                <select id="filter-kelas" class="form-select">
+                        <option value="">-- Semua Kelas --</option>
+                    </select>
                 </div>
-                <div class="bg-white rounded-3xl border border-slate-200 p-8 page-fade-in">
-                    <h3 class="font-bold mb-6 flex items-center gap-2"><i data-lucide="activity" class="text-blue-600"></i> Aktivitas Terbaru</h3>
-                    <div class="space-y-4">
-                        ${[1, 2, 3].map(i => `
-                            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div class="flex items-center gap-4">
-                                    <div class="bg-emerald-100 text-emerald-600 p-2 rounded-xl"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
-                                    <div>
-                                        <p class="font-bold text-sm text-slate-900">Absensi Kelas X MIPA ${i} Selesai</p>
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase">Oleh: Bp. Budi • ${i * 5} Menit Lalu</p>
-                                    </div>
-                                </div>
-                                <span class="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-tighter">Cloud Synced</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
+                <div class="col-md-4">
+                <input type="text" id="filter-nama" class="form-control" placeholder="Cari Nama Siswa...">
+            </div>
+            <div class="col-md-4">
+                <button id="btn-filter" class="btn btn-brand w-100 h-100">Cari Data</button>
+            </div>
+        </div>
 
-        function createStatCard(label, val, icon, color) {
-            const cls = { blue: 'bg-blue-50 text-blue-600', emerald: 'bg-emerald-50 text-emerald-600', amber: 'bg-amber-50 text-amber-600', rose: 'bg-rose-50 text-rose-600' };
-            return `
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition hover:shadow-md">
-                    <div class="w-10 h-10 ${cls[color]} rounded-xl flex items-center justify-center mb-4"><i data-lucide="${icon}"></i></div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${label}</p>
-                    <p class="text-2xl font-black mt-1 text-slate-900">${val}</p>
-                </div>
-            `;
-        }
-
-        // --- HALAMAN ABSENSI (UPDATE) ---
-        function renderAbsensi(container) {
-            attendanceData = {}; // Reset data temp
-            container.innerHTML = `
-                <div class="max-w-4xl mx-auto page-fade-in">
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm mb-6">
-                        <div class="flex flex-col md:flex-row gap-4 items-end mb-8">
-                            <div class="flex-1">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2 tracking-widest">Pilih Kelas</label>
-                                <select id="absensi-kelas" onchange="loadSiswaAbsensi()" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
-                                    <option value="">-- Pilih Kelas Terdaftar --</option>
-                                    <option value="X-MIPA1">X MIPA 1</option>
-                                    <option value="X-MIPA2">X MIPA 2</option>
-                                    <option value="XI-IPS1">XI IPS 1</option>
-                                </select>
-                            </div>
-                            <div class="w-full md:w-48 text-right">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2 tracking-widest">Tanggal</label>
-                                <div class="p-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="calendar" class="w-4 h-4"></i> ${new Date().toLocaleDateString('id-ID')}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="absensi-list-container" class="space-y-3">
-                            <div class="text-center py-20">
-                                <div class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                    <i data-lucide="search" class="text-slate-300 w-8 h-8"></i>
-                                </div>
-                                <p class="text-slate-400 text-sm font-medium">Silahkan pilih kelas untuk memuat daftar siswa.</p>
-                            </div>
-                        </div>
-
-                        <div id="absensi-footer" class="hidden mt-8 pt-8 border-t border-slate-100 flex justify-between items-center">
-                            <div class="text-xs text-slate-400 font-medium italic">* Pastikan semua siswa telah diberi status.</div>
-                            <button onclick="submitAbsensi()" class="bg-blue-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition flex items-center gap-2">
-                                <i data-lucide="cloud-upload" class="w-5 h-5"></i> Simpan Ke Spreadsheet
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            refreshIcons();
-        }
-
-        function loadSiswaAbsensi() {
-            const kelas = document.getElementById('absensi-kelas').value;
-            const container = document.getElementById('absensi-list-container');
-            const footer = document.getElementById('absensi-footer');
-            
-            if (!kelas) { 
-                renderAbsensi(document.getElementById('content-container')); 
-                return; 
-            }
-
-            // Mock Data Siswa (Nanti tarik dari Spreadsheet)
-            const mockSiswa = [
-                { id: 1, nis: '100231', nama: 'ADITYA PRATAMA' },
-                { id: 2, nis: '100232', nama: 'ANISA RAHMAWATI' },
-                { id: 3, nis: '100233', nama: 'BUDI SETIAWAN' },
-                { id: 4, nis: '100234', nama: 'CITRA LESTARI' },
-                { id: 5, nis: '100235', nama: 'DEDI KURNIAWAN' }
-            ];
-
-            container.innerHTML = `
-                <div class="grid grid-cols-5 gap-4 px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-2">
-                    <div class="col-span-2">Informasi Siswa</div>
-                    <div class="col-span-3 text-center">Status Kehadiran</div>
-                </div>
-                ${mockSiswa.map(s => `
-                    <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-200 transition">
-                        <div class="flex-1">
-                            <p class="font-bold text-sm text-slate-900 leading-none">${s.nama}</p>
-                            <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">NIS: ${s.nis}</p>
-                        </div>
-                        <div class="flex gap-2" id="group-${s.id}">
-                            ${['H', 'I', 'S', 'A'].map(status => `
-                                <button onclick="setStatus(${s.id}, '${status}')" 
-                                    data-id="${s.id}" data-status="${status}"
-                                    class="status-btn w-10 h-10 border border-slate-200 rounded-xl font-black text-xs transition-all hover:border-slate-400">
-                                    ${status}
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('')}
-            `;
-            footer.classList.remove('hidden');
-            refreshIcons();
-        }
-
-        function setStatus(siswaId, status) {
-            // Hapus kelas aktif dari tombol lain di grup yang sama
-            const buttons = document.querySelectorAll(`.status-btn[data-id="${siswaId}"]`);
-            buttons.forEach(btn => btn.classList.remove('status-btn-active'));
-            
-            // Tambahkan kelas aktif ke tombol yang diklik
-            const activeBtn = document.querySelector(`.status-btn[data-id="${siswaId}"][data-status="${status}"]`);
-            activeBtn.classList.add('status-btn-active');
-            
-            // Simpan ke state
-            attendanceData[siswaId] = status;
-        }
-
-        async function submitAbsensi() {
-            const kelas = document.getElementById('absensi-kelas').value;
-            const totalSiswa = document.querySelectorAll('.status-btn[data-status="H"]').length / 4; // Menghitung baris
-            const isi = Object.keys(attendanceData).length;
-
-            if (isi < totalSiswa) {
-                showModalMessage("Peringatan", "Beberapa siswa belum diberi status kehadiran. Mohon lengkapi data terlebih dahulu.", "rose");
-                return;
-            }
-
-            toggleLoader(true);
-            // Simulasi proses simpan
-            setTimeout(() => {
-                toggleLoader(false);
-                showModalMessage("Berhasil", "Data absensi kelas " + kelas + " telah berhasil disinkronkan ke Google Spreadsheet.", "emerald");
-                navigate('dashboard');
-            }, 1500);
-        }
-
-        function showModalMessage(title, msg, color) {
-            const colors = { rose: 'bg-rose-50 text-rose-600', emerald: 'bg-emerald-50 text-emerald-600' };
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-body').innerHTML = `
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 ${colors[color]} rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="${color === 'emerald' ? 'check' : 'alert-circle'}" class="w-8 h-8"></i>
-                    </div>
-                    <p class="text-slate-600 font-medium">${msg}</p>
-                </div>
-            `;
-            document.getElementById('modal-save-btn').classList.add('hidden');
-            document.getElementById('crud-modal').classList.remove('hidden');
-            refreshIcons();
-        }
-
-        function closeModal() { 
-            document.getElementById('crud-modal').classList.add('hidden'); 
-            document.getElementById('modal-save-btn').classList.remove('hidden');
-        }
-
-        // --- CRUD KELAS ---
-        function renderKelasCRUD(container) {
-            container.innerHTML = `
-                <div class="flex justify-between items-center mb-6 page-fade-in">
-                    <h3 class="font-bold text-slate-900 text-lg">Daftar Kelas</h3>
-                    <button onclick="openKelasModal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Tambah Kelas
-                    </button>
-                </div>
-                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm page-fade-in">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            <tr><th class="p-4">Kode Kelas</th><th class="p-4">Nama Kelas</th><th class="p-4 text-right">Aksi</th></tr>
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-brand-header">
+                            <tr>
+                                <th class="py-3 px-4">Tanggal</th>
+                                <th class="py-3 px-4">Nama Siswa</th>
+                                <th class="py-3 px-4">Kelas</th>
+                                <th class="py-3 px-4">Surat</th>
+                                <th class="py-3 px-4">Ayat</th>
+                                <th class="py-3 px-4">Nilai</th>
+                                <th class="py-3 px-4">Pencatat</th>
+                            </tr>
                         </thead>
-                        <tbody class="text-sm">
-                            <tr class="border-b border-slate-50"><td class="p-4 font-bold">X-MIPA1</td><td class="p-4">X MIPA 1</td><td class="p-4 text-right flex justify-end gap-2"><button class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button></td></tr>
+                        <tbody id="table-body-setoran" class="border-top-0">
+                            <tr><td colspan="7" class="text-center py-4">Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
-            `;
-            refreshIcons();
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE: INPUT SETORAN (Hanya untuk yang Login) -->
+    <div id="page-input" class="page">
+        <h2 class="mb-4 fw-bold" style="color: #1e293b;">Input Setoran Baru</h2>
+        <div class="card mx-auto" style="max-width: 600px;">
+            <div class="card-body p-4">
+                <form id="form-input">
+                    <div class="mb-3">
+                            <label class="form-label">Kelas</label>
+                            <select id="input-kelas" class="form-select" required>
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Siswa</label>
+                            <select id="input-siswa" class="form-select" required disabled>
+                                <option value="">-- Pilih Siswa (Pilih kelas dulu) --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Surat</label>
+                            <select id="input-surat" class="form-select" required>
+                            <option value="">-- Pilih Surat --</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-medium">Ayat (Contoh: 1-5)</label>
+                            <input type="text" id="input-ayat" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-medium">Nilai (Angka)</label>
+                            <input type="number" id="input-nilai" class="form-control" required min="0" max="100">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-brand w-100 py-2 fs-5">Simpan Setoran</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-brand text-white border-0">
+                <h5 class="modal-title fw-bold">Login Sistem</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="form-login">
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Email</label>
+                        <input type="email" id="login-email" class="form-control" required placeholder="Masukkan email...">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Password</label>
+                        <input type="password" id="login-password" class="form-control" required placeholder="Masukkan password...">
+                    </div>
+                    <button type="submit" class="btn btn-brand w-100 py-2">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Main JavaScript Logic -->
+    <script>
+        // ==========================================
+        // 1. INISIALISASI SUPABASE
+        // ==========================================
+        const SUPABASE_URL = 'https://xxyeuxzthiewysyrzrpt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_2qbIowhmPg7ssxFh25tLJg_xuUn4GYq';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // State Global
+        let currentUser = null;
+        let currentUserRole = null;
+        // Daftar 114 Surat Al-Qur'an berurutan
+        const daftarSurat = [
+            '1. Al-Fatihah', '2. Al-Baqarah', '3. Ali \'Imran', '4. An-Nisa\'', '5. Al-Ma\'idah', '6. Al-An\'am', '7. Al-A\'raf', '8. Al-Anfal', '9. At-Taubah', '10. Yunus',
+            '11. Hud', '12. Yusuf', '13. Ar-Ra\'d', '14. Ibrahim', '15. Al-Hijr', '16. An-Nahl', '17. Al-Isra\'', '18. Al-Kahf', '19. Maryam', '20. Taha',
+            '21. Al-Anbiya\'', '22. Al-Hajj', '23. Al-Mu\'minun', '24. An-Nur', '25. Al-Furqan', '26. Asy-Syu\'ara\'', '27. An-Naml', '28. Al-Qasas', '29. Al-\'Ankabut', '30. Ar-Rum',
+            '31. Luqman', '32. As-Sajdah', '33. Al-Ahzab', '34. Saba\'', '35. Fatir', '36. Yasin', '37. As-Saffat', '38. Sad', '39. Az-Zumar', '40. Ghafir',
+            '41. Fussilat', '42. Asy-Syura', '43. Az-Zukhruf', '44. Ad-Dukhan', '45. Al-Jasiyah', '46. Al-Ahqaf', '47. Muhammad', '48. Al-Fath', '49. Al-Hujurat', '50. Qaf',
+            '51. Az-Zariyat', '52. At-Tur', '53. An-Najm', '54. Al-Qamar', '55. Ar-Rahman', '56. Al-Waqi\'ah', '57. Al-Hadid', '58. Al-Mujadilah', '59. Al-Hasyr', '60. Al-Mumtahanah',
+            '61. As-Saff', '62. Al-Jumu\'ah', '63. Al-Munafiqun', '64. At-Tagabun', '65. At-Talaq', '66. At-Tahrim', '67. Al-Mulk', '68. Al-Qalam', '69. Al-Haqqah', '70. Al-Ma\'arij',
+            '71. Nuh', '72. Al-Jinn', '73. Al-Muzzammil', '74. Al-Muddassir', '75. Al-Qiyamah', '76. Al-Insan', '77. Al-Mursalat', '78. An-Naba\'', '79. An-Nazi\'at', '80. \'Abasa',
+            '81. At-Takwir', '82. Al-Infitar', '83. Al-Mutaffifin', '84. Al-Insyiqaq', '85. Al-Buruj', '86. At-Tariq', '87. Al-A\'la', '88. Al-Gasyiyah', '89. Al-Fajr', '90. Al-Balad',
+            '91. Asy-Syams', '92. Al-Lail', '93. Ad-Duha', '94. Asy-Syarh', '95. At-Tin', '96. Al-\'Alaq', '97. Al-Qadr', '98. Al-Bayyinah', '99. Az-Zalzalah', '100. Al-\'Adiyat',
+            '101. Al-Qari\'ah', '102. At-Takasur', '103. Al-\'Asr', '104. Al-Humazah', '105. Al-Fil', '106. Quraisy', '107. Al-Ma\'un', '108. Al-Kausar', '109. Al-Kafirun', '110. An-Nasr',
+            '111. Al-Lahab', '112. Al-Ikhlas', '113. Al-Falaq', '114. An-Nas'
+        ];
+
+        // ==========================================
+        // 2. ROUTING SEDERHANA (SPA)
+        // ==========================================
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            // Perbarui data saat pindah halaman
+            if(pageId === 'page-home') loadSetoran();
+            if(pageId === 'page-input') loadKelasForInput();
         }
 
-        // Placeholder untuk navigasi lainnya
-        function renderRekap(container) { container.innerHTML = `<div class="bg-white p-10 rounded-3xl text-center text-slate-400 font-bold">Modul Rekapitulasi Sedang Disiapkan</div>`; }
-        function renderSiswaCRUD(container) { container.innerHTML = `<div class="bg-white p-10 rounded-3xl text-center text-slate-400 font-bold">Modul Data Siswa Sedang Disiapkan</div>`; }
-        function renderUserCRUD(container) { container.innerHTML = `<div class="bg-white p-10 rounded-3xl text-center text-slate-400 font-bold">Modul Manajemen User Sedang Disiapkan</div>`; }
+        // ==========================================
+        // 3. MANAJEMEN OTENTIKASI & UI ROLE
+        // ==========================================
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUser = session?.user || null;
+
+            const btnLoginModal = document.getElementById('btn-login-modal');
+            const btnLogout = document.getElementById('btn-logout');
+            const menuAuth = document.querySelectorAll('.menu-auth');
+            const menuAdmin = document.querySelectorAll('.menu-admin');
+
+            if (currentUser) {
+                // Ambil Role dari tabel profiles
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
+                currentUserRole = profile?.role;
+
+                // Atur Tampilan Tombol Navbar
+                btnLoginModal.classList.add('d-none');
+                btnLogout.classList.remove('d-none');
+                
+                // Tampilkan menu khusus orang login (Guru & Admin)
+                menuAuth.forEach(el => el.classList.remove('d-none'));
+
+                // Tampilkan menu khusus admin
+                if (currentUserRole === 'admin') {
+                    menuAdmin.forEach(el => el.classList.remove('d-none'));
+                }
+            } else {
+                currentUserRole = null;
+                // Atur Tampilan Navbar Publik
+                btnLoginModal.classList.remove('d-none');
+                btnLogout.classList.add('d-none');
+                menuAuth.forEach(el => el.classList.add('d-none'));
+                menuAdmin.forEach(el => el.classList.add('d-none'));
+                
+                // Paksa kembali ke Home jika sedang di halaman restricted
+                showPage('page-home');
+            }
+
+            // Muat data awal Home
+            loadSetoran();
+            loadKelasForFilter();
+            populateSuratDropdown();
+        }
+
+        // Event Listener Login
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Gagal Login: ' + error.message);
+            } else {
+                alert('Login Berhasil!');
+                bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+                document.getElementById('form-login').reset();
+            }
+        });
+
+        // Event Listener Logout
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            alert('Berhasil Logout!');
+        });
+
+        // Pantau Perubahan Status Login (Otomatis panggil checkAuth jika login/logout)
+        supabase.auth.onAuthStateChange((event, session) => {
+            checkAuth();
+        });
+
+        // ==========================================
+        // 4. LOGIKA HOME (REKAPAN PUBLIK)
+        // ==========================================
+        async function loadKelasForFilter() {
+            const { data, error } = await supabase.from('kelas').select('*');
+            if (data) {
+                const select = document.getElementById('filter-kelas');
+                select.innerHTML = '<option value="">-- Semua Kelas --</option>';
+                data.forEach(k => {
+                    select.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+                });
+            }
+        }
+
+        async function loadSetoran() {
+            const tbody = document.getElementById('table-body-setoran');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Memuat data...</td></tr>';
+
+            const filterKelas = document.getElementById('filter-kelas').value;
+            const filterNama = document.getElementById('filter-nama').value.toLowerCase();
+
+            // RLS akan otomatis memfilter: 
+            // - Publik -> melihat semua.
+            // - Guru login -> melihat HANYA kelas mereka (karena aturan policy di SQL)
+            let query = supabase
+                .from('setoran')
+                .select(`
+                    id, tanggal, nama_surat, ayat, nilai,
+                    siswa!inner (id, nama_siswa, kelas!inner(id, nama_kelas)),
+                    profiles (nama_lengkap)
+                `)
+                .order('tanggal', { ascending: false });
+
+            // Terapkan Filter Dropdown jika ada
+            if (filterKelas) query = query.eq('siswa.kelas.id', filterKelas);
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                return;
+            }
+
+            // Filter teks nama di sisi klien
+            const filteredData = data.filter(d => 
+                d.siswa.nama_siswa.toLowerCase().includes(filterNama)
+            );
+
+            tbody.innerHTML = '';
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada data setoran.</td></tr>';
+                return;
+            }
+
+            filteredData.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.tanggal}</td>
+                    <td>${d.siswa.nama_siswa}</td>
+                    <td>${d.siswa.kelas.nama_kelas}</td>
+                    <td>${d.nama_surat}</td>
+                    <td>${d.ayat}</td>
+                    <td>${d.nilai}</td>
+                    <td>${d.profiles ? d.profiles.nama_lengkap : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('btn-filter').addEventListener('click', loadSetoran);
+
+        // ==========================================
+        // 5. LOGIKA INPUT SETORAN (GURU/ADMIN)
+        // ==========================================
+        function populateSuratDropdown() {
+            const selectSurat = document.getElementById('input-surat');
+            selectSurat.innerHTML = '<option value="">-- Pilih Surat --</option>';
+            daftarSurat.forEach(surat => {
+                selectSurat.innerHTML += `<option value="${surat}">${surat}</option>`;
+            });
+        }
+
+        async function loadKelasForInput() {
+            // Ambil daftar kelas. Jika user adalah guru, idealnya kita ambil dari akses_guru
+            // Namun karena RLS kelas terbuka untuk read, kita ambil semua kelas dan bergantung pada RLS saat insert.
+            // (Untuk UX yang lebih baik, Anda bisa memfilter query select ini khusus kelas milik guru).
+            const { data, error } = await supabase.from('kelas').select('*');
+            if (data) {
+                const select = document.getElementById('input-kelas');
+                select.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+                data.forEach(k => {
+                    select.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+                });
+            }
+        }
+
+        // Dependent Dropdown: Saat kelas dipilih, ambil data siswa
+        document.getElementById('input-kelas').addEventListener('change', async (e) => {
+            const idKelas = e.target.value;
+            const selectSiswa = document.getElementById('input-siswa');
+            
+            if (!idKelas) {
+                selectSiswa.innerHTML = '<option value="">-- Pilih Siswa (Pilih kelas dulu) --</option>';
+                selectSiswa.disabled = true;
+                return;
+            }
+
+            selectSiswa.innerHTML = '<option value="">Memuat siswa...</option>';
+            const { data, error } = await supabase.from('siswa').select('id, nama_siswa').eq('id_kelas', idKelas);
+            
+            if (data) {
+                selectSiswa.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+                data.forEach(s => {
+                    selectSiswa.innerHTML += `<option value="${s.id}">${s.nama_siswa}</option>`;
+                });
+                selectSiswa.disabled = false;
+            }
+        });
+
+        // Submit Setoran
+        document.getElementById('form-input').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if(!currentUser) {
+                alert("Anda harus login untuk menginput data.");
+                return;
+            }
+
+            const idSiswa = document.getElementById('input-siswa').value;
+            const namaSurat = document.getElementById('input-surat').value;
+            const ayat = document.getElementById('input-ayat').value;
+            const nilai = document.getElementById('input-nilai').value;
+
+            const { data, error } = await supabase
+                .from('setoran')
+                .insert([
+                    { 
+                        id_siswa: idSiswa, 
+                        nama_surat: namaSurat, 
+                        ayat: ayat, 
+                        nilai: nilai,
+                        id_user: currentUser.id // Relasi pencatat setoran
+                    }
+                ]);
+
+            if (error) {
+                alert('Gagal menyimpan: ' + error.message);
+            } else {
+                alert('Setoran berhasil disimpan!');
+                document.getElementById('form-input').reset();
+                document.getElementById('input-siswa').disabled = true;
+                showPage('page-home'); // Kembali ke rekap
+            }
+        });
+
+        // ==========================================
+        // 6. MULAI APLIKASI
+        // ==========================================
+        window.onload = () => {
+            checkAuth(); // Cek status login saat halaman pertama kali dimuat
+        };
     </script>
 </body>
 </html>
