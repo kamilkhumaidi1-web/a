@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Setoran Hafalan - MA M1 Paciran</title>
     
+    <!-- Favicon Logo Sekolah -->
+    <link rel="icon" type="image/png" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgJ1qwbuD87O4p6J3V2SOVC_DDoyrjyJuxS5pwS6qICupfAfAX3gDPV7WWNLpvAlQu0a80npI3w0hR3PU3b-oRipW57QuvJyE9sfdUHHscpVm-vBMc32Tjsxfuoib1_IVoKawlEneX9q2hs/s1600/MA+M1.png">
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -87,15 +90,15 @@
 
         <!-- Navigation Links -->
         <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
-            <button id="nav-home" onclick="showPage('home')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200 active">
+            <button id="nav-home" onclick="showPage('home')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200 active">
                 <i class="fa-solid fa-house text-lg w-6"></i>
                 <span>Home (Rekapan)</span>
             </button>
-            <button id="nav-input" onclick="showPage('input')" class="w-full hidden flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
+            <button id="nav-input" onclick="showPage('input')" class="nav-item w-full hidden flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
                 <i class="fa-solid fa-pen-to-square text-lg w-6"></i>
                 <span>Input Setoran</span>
             </button>
-            <button id="nav-kelola" onclick="showPage('kelola')" class="w-full hidden flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
+            <button id="nav-kelola" onclick="showPage('kelola')" class="nav-item w-full hidden flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
                 <i class="fa-solid fa-sliders text-lg w-6"></i>
                 <span>Kelola Data</span>
             </button>
@@ -130,7 +133,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Filter Kelas</label>
-                        <select id="filter-kelas" onchange="loadSetoran()" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm bg-slate-50 font-medium">
+                        <select id="filter-kelas" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm bg-slate-50 font-medium" onchange="loadSetoran()">
                             <option value="">-- Semua Kelas --</option>
                         </select>
                     </div>
@@ -154,7 +157,7 @@
                                 <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Nama Siswa</th>
                                 <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Kelas</th>
                                 <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Surat & Ayat</th>
-                                <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Nilai</th>
+                                <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Kategori Nilai</th>
                                 <th class="p-4 font-bold uppercase text-[11px] tracking-wider">Pencatat (Guru)</th>
                             </tr>
                         </thead>
@@ -202,8 +205,14 @@
                         <input type="text" id="input-ayat" placeholder="Contoh: 1-5" required class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm font-medium">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nilai (0 - 100)</label>
-                        <input type="number" id="input-nilai" min="0" max="100" required placeholder="Contoh: 85" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm font-medium">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Kriteria Nilai Kelancaran</label>
+                        <select id="input-nilai" required class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm font-medium">
+                            <option value="">-- Pilih Kriteria Kelancaran --</option>
+                            <option value="Sangat Lancar">Sangat Lancar</option>
+                            <option value="Lancar">Lancar</option>
+                            <option value="Kurang Lancar">Kurang Lancar</option>
+                            <option value="Mengulang">Mengulang</option>
+                        </select>
                     </div>
                     
                     <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold tracking-wide shadow-md transition duration-200 flex items-center justify-center gap-2">
@@ -347,10 +356,8 @@
 
     <!-- MODAL: LOGIN -->
     <div id="login-modal" class="fixed inset-0 z-[1100] flex items-center justify-center hidden">
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeLoginModal()"></div>
-        <!-- Modal Card -->
-        <div class="relative bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl p-6 border border-slate-100 z-10 animate-[fadeIn_0.2s_ease-out]">
+        <div class="relative bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl p-6 border border-slate-100 z-10">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-extrabold text-slate-900">Masuk ke Sistem</h3>
                 <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600 text-lg focus:outline-none">
@@ -375,9 +382,7 @@
 
     <!-- CUSTOM CONFIRMATION MODAL -->
     <div id="confirm-modal" class="fixed inset-0 z-[1200] flex items-center justify-center hidden">
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-        <!-- Modal Box -->
         <div class="relative bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 border border-slate-100 z-10">
             <div class="text-center space-y-4">
                 <div class="mx-auto w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-xl shadow-inner">
@@ -400,7 +405,7 @@
     </div>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
-    <div id="toast-container"></div>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[1300] space-y-2"></div>
 
     <!-- SUPABASE SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -408,7 +413,7 @@
     <!-- LOGIKA UTAMA APLIKASI -->
     <script>
         // ==========================================
-        // 1. KONFIGURASI SUPABASE (GANTI DENGAN MILIK ANDA)
+        // 1. KONFIGURASI SUPABASE (SILAHAAN GUNAKAN KREDENSIAL AKTIF ANDA)
         // ==========================================
         const SUPABASE_URL = 'https://xxyeuxzthiewysyrzrpt.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eWV1eHp0aGlld3lzeXJ6cnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NjcwNTQsImV4cCI6MjEwMDA0MzA1NH0.F0lYS5sgc9pwiihvXcsY012YSLNHFVNoZfv1AGUWO5A';
@@ -419,6 +424,32 @@
         let currentUser = null;
         let currentUserRole = null;
         let guruAllowedKelas = []; 
+
+        // Pemetaan Kriteria Nilai Teks ke Angka (Untuk Supabase Column Numeric)
+        const nilaiToNumeric = {
+            'Sangat Lancar': 4,
+            'Lancar': 3,
+            'Kurang Lancar': 2,
+            'Mengulang': 1
+        };
+
+        // Pemetaan Angka dari Supabase kembali ke Label Teks
+        function parseNilai(nilaiDb) {
+            if (nilaiDb == 4) return 'Sangat Lancar';
+            if (nilaiDb == 3) return 'Lancar';
+            if (nilaiDb == 2) return 'Kurang Lancar';
+            if (nilaiDb == 1) return 'Mengulang';
+            
+            // Kompatibilitas jika di database ada nilai lama dalam rentang (0 - 100)
+            const score = Number(nilaiDb);
+            if (!isNaN(score) && score > 4) {
+                if (score >= 90) return 'Sangat Lancar';
+                if (score >= 75) return 'Lancar';
+                if (score >= 60) return 'Kurang Lancar';
+                return 'Mengulang';
+            }
+            return nilaiDb || '-';
+        }
 
         const daftarSurat = [
             "1. Al-Fatihah", "2. Al-Baqarah", "3. Ali 'Imran", "4. An-Nisa'", "5. Al-Ma'idah", "6. Al-An'am", "7. Al-A'raf", "8. Al-Anfal", "9. At-Taubah", "10. Yunus",
@@ -442,7 +473,7 @@
             const bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-rose-600';
             const iconClass = type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation';
             const toastHtml = `
-                <div class="toast flex items-center gap-3 text-white px-4 py-3 rounded-2xl shadow-xl ${bgClass} border-0 transition duration-300 transform translate-y-0" style="margin-bottom: 10px;">
+                <div class="flex items-center gap-3 text-white px-4 py-3 rounded-2xl shadow-xl ${bgClass} border-0 transition duration-300 transform translate-y-0" style="margin-bottom: 10px;">
                     <i class="fa-solid ${iconClass} text-lg"></i>
                     <div class="text-sm font-semibold">${message}</div>
                 </div>`;
@@ -491,17 +522,13 @@
         }
 
         function showPage(pageId) {
-            // Tutup laci sidebar di mobile setelah diklik
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
             }
 
-            // Sembunyikan semua halaman
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
-            // Tampilkan halaman target
             document.getElementById('page-' + pageId).classList.remove('hidden');
             
-            // Perbarui visual item navigasi
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.remove('bg-brand-500', 'text-white', 'shadow-inner');
                 el.classList.add('text-slate-300');
@@ -510,7 +537,6 @@
             activeItem.classList.add('bg-brand-500', 'text-white', 'shadow-inner');
             activeItem.classList.remove('text-slate-300');
 
-            // Jalankan loader data khusus halaman
             if(pageId === 'home') loadSetoran();
             if(pageId === 'input') {
                 populateSuratDropdown();
@@ -534,7 +560,6 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user.id;
-                // Ambil data profil
                 const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser).single();
                 
                 if (profile) {
@@ -640,7 +665,6 @@
                 return;
             }
 
-            // Filter data secara manual di frontend agar aman & akurat
             const filteredData = data.filter(d => {
                 if(!d.siswa) return false;
                 if(currentUserRole === 'guru' && !guruAllowedKelas.includes(d.siswa.id_kelas)) return false; 
@@ -656,6 +680,20 @@
 
             tbody.innerHTML = '';
             filteredData.forEach(d => {
+                // Konversi data angka ke label teks kriteria
+                const labelNilai = parseNilai(d.nilai);
+
+                let badgeClass = 'text-brand-600 bg-brand-50 border-brand-100';
+                if (labelNilai === 'Sangat Lancar') {
+                    badgeClass = 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                } else if (labelNilai === 'Lancar') {
+                    badgeClass = 'text-blue-700 bg-blue-50 border-blue-100';
+                } else if (labelNilai === 'Kurang Lancar') {
+                    badgeClass = 'text-amber-700 bg-amber-50 border-amber-100';
+                } else if (labelNilai === 'Mengulang') {
+                    badgeClass = 'text-rose-700 bg-rose-50 border-rose-100';
+                }
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/50 transition border-b border-slate-50";
                 tr.innerHTML = `
@@ -663,7 +701,7 @@
                     <td class="p-4 font-bold text-slate-900">${d.siswa.nama_siswa}</td>
                     <td class="p-4"><span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg">${d.siswa.kelas?.nama_kelas || '-'}</span></td>
                     <td class="p-4 font-medium text-slate-600">${d.nama_surat} (Ayat: ${d.ayat})</td>
-                    <td class="p-4"><span class="inline-block text-sm font-extrabold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-lg border border-brand-100">${d.nilai}</span></td>
+                    <td class="p-4"><span class="inline-block text-xs font-bold px-2.5 py-1 rounded-lg border ${badgeClass}">${labelNilai}</span></td>
                     <td class="p-4 text-xs font-semibold text-slate-500"><i class="fa-solid fa-chalkboard-user mr-1 text-slate-300"></i> ${d.profiles?.nama_lengkap || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -671,11 +709,11 @@
         }
 
         // ==========================================
-        // 6. LOGIKA INPUT DATA SETORAN BARU
+        // 6. LOGIKA INPUT DATA SETORAN BARU (MAPPING TEXT TO NUMERIC)
         // ==========================================
         function populateSuratDropdown() {
             const select = document.getElementById('input-surat');
-            if(select.options.length > 1) return; // Diubah dari > 0 menjadi > 1 agar tidak terblokir oleh opsi placeholder bawaan HTML
+            if(select.options.length > 1) return; 
             select.innerHTML = '<option value="">-- Pilih Surat --</option>';
             daftarSurat.forEach(s => select.innerHTML += `<option value="${s}">${s}</option>`);
         }
@@ -723,17 +761,22 @@
 
         document.getElementById('form-setoran').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const rawKriteria = document.getElementById('input-nilai').value;
+            const numericalNilai = nilaiToNumeric[rawKriteria]; // Terjemahkan teks ke angka (e.g. "Sangat Lancar" -> 4)
+
             const insertData = {
                 id_siswa: document.getElementById('input-siswa').value,
                 nama_surat: document.getElementById('input-surat').value,
                 ayat: document.getElementById('input-ayat').value,
-                nilai: document.getElementById('input-nilai').value,
+                nilai: numericalNilai, // Mengirimkan tipe angka yang valid ke database
                 id_user: currentUser
             };
 
             const { error } = await supabaseClient.from('setoran').insert([insertData]);
-            if(error) showToast('Gagal menyimpan setoran: ' + error.message, 'error');
-            else {
+            if(error) {
+                showToast('Gagal menyimpan setoran: ' + error.message, 'error');
+            } else {
                 showToast('Data setoran baru berhasil disimpan!');
                 document.getElementById('form-setoran').reset();
                 document.getElementById('input-siswa').disabled = true;
@@ -745,7 +788,6 @@
         // 7. LOGIKA DASHBOARD ADMIN (KELOLA DATA)
         // ==========================================
         async function loadAdminData() {
-            // 1. Ambil data semua kelas untuk dropdown form
             const { data: kelasData } = await supabaseClient.from('kelas').select('*').order('nama_kelas');
             
             const selectKelasSiswa = document.getElementById('admin-select-kelas');
@@ -757,17 +799,14 @@
             selectKelasSiswa.innerHTML = kelasOptions;
             selectKelasGuru.innerHTML = kelasOptions;
 
-            // 2. Ambil data guru dari profiles
             const { data: guruData } = await supabaseClient.from('profiles').select('id, nama_lengkap').eq('role', 'guru');
             const selectGuru = document.getElementById('kelola-select-guru');
             selectGuru.innerHTML = '<option value="">-- Pilih Guru --</option>';
             if(guruData) guruData.forEach(g => selectGuru.innerHTML += `<option value="${g.id}">${g.nama_lengkap}</option>`);
 
-            // 3. Muat tabel pemetaan hak akses guru
             loadTabelAksesGuru();
         }
 
-        // FUNGSI: Tambah Kelas Baru
         document.getElementById('form-tambah-kelas').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nama_kelas = document.getElementById('input-tambah-kelas').value;
@@ -778,11 +817,10 @@
             } else {
                 showToast('Kelas ' + nama_kelas + ' berhasil dibuat!');
                 document.getElementById('form-tambah-kelas').reset();
-                loadAdminData(); // Refresh dropdown kelas
+                loadAdminData(); 
             }
         });
 
-        // FUNGSI: Tambah Siswa Baru
         document.getElementById('form-tambah-siswa').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id_kelas = document.getElementById('admin-select-kelas').value;
@@ -797,14 +835,13 @@
             }
         });
 
-        // FUNGSI: Tambah Akun Guru Baru
         document.getElementById('form-tambah-guru').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nama = document.getElementById('input-guru-nama').value;
             const email = document.getElementById('input-guru-email').value;
             const password = document.getElementById('input-guru-password').value;
 
-            // PENTING: Membuat instance Supabase sementara khusus pendaftaran agar admin tidak logout
+            // Klien bypass tanpa mengakhiri sesi Admin utama
             const tempSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                 auth: { persistSession: false }
             });
@@ -823,16 +860,15 @@
             if (error) {
                 showToast('Pendaftaran Gagal: ' + error.message, 'error');
             } else if (data.user) {
-                // Masukkan data Guru baru ke tabel profiles publik
                 await supabaseClient.from('profiles').upsert({
                     id: data.user.id,
                     nama_lengkap: nama,
                     role: 'guru'
                 });
 
-                showToast('Akun ' + nama + ' berhasil didaftarkan tanpa memengaruhi sesi Anda!');
+                showToast('Akun ' + nama + ' berhasil didaftarkan!');
                 document.getElementById('form-tambah-guru').reset();
-                loadAdminData(); // Refresh daftar guru
+                loadAdminData(); 
             }
         });
 
@@ -846,7 +882,7 @@
             const { data: aksesData, error } = await supabaseClient.from('akses_guru').select(`id, profiles(nama_lengkap), kelas(nama_kelas)`);
                 
             if(error || !aksesData || aksesData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 text-xs"><i class="fa-solid fa-face-empty text-lg mb-1.5 block"></i> Belum ada pemetaan akses guru ke kelas.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 text-xs">Belum ada pemetaan akses guru ke kelas.</td></tr>';
                 return;
             }
 
@@ -870,7 +906,6 @@
             const id_user = document.getElementById('kelola-select-guru').value;
             const id_kelas = document.getElementById('kelola-select-kelas').value;
 
-            // Validasi: Cek apakah relasi tersebut sudah pernah ada di database
             const { data: existing } = await supabaseClient.from('akses_guru').select('id').eq('id_user', id_user).eq('id_kelas', id_kelas).single();
             if(existing) {
                 showToast('Guru tersebut sudah memiliki hak akses ke kelas ini!', 'error'); 
