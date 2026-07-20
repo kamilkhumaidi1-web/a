@@ -675,7 +675,7 @@
         // ==========================================
         function populateSuratDropdown() {
             const select = document.getElementById('input-surat');
-            if(select.options.length > 0) return;
+            if(select.options.length > 1) return; // Diubah dari > 0 menjadi > 1 agar tidak terblokir oleh opsi placeholder bawaan HTML
             select.innerHTML = '<option value="">-- Pilih Surat --</option>';
             daftarSurat.forEach(s => select.innerHTML += `<option value="${s}">${s}</option>`);
         }
