@@ -189,7 +189,12 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nama Siswa</label>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Nama Siswa</label>
+                            <button type="button" onclick="bukaModalTambahSiswaCepat()" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 transition inline-flex items-center gap-1.5 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg">
+                                <i class="fa-solid fa-plus"></i> Tambah Siswa Baru
+                            </button>
+                        </div>
                         <select id="input-siswa" required disabled class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm font-medium bg-slate-50">
                             <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
                         </select>
@@ -464,6 +469,33 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TAMBAH SISWA CEPAT (OLEH GURU) -->
+    <div id="modal-tambah-siswa-cepat" class="fixed inset-0 z-[1160] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="tutupModalTambahSiswaCepat()"></div>
+        <div class="relative bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 border border-slate-100 z-10">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-extrabold text-slate-900">Tambah Siswa Cepat</h3>
+                <button onclick="tutupModalTambahSiswaCepat()" class="text-slate-400 hover:text-slate-600 text-lg focus:outline-none">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-tambah-siswa-cepat" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Kelas Terpilih</label>
+                    <input type="text" id="cepat-nama-kelas" readonly class="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium text-slate-600 focus:outline-none">
+                    <input type="hidden" id="cepat-id-kelas">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Nama Lengkap Siswa</label>
+                    <input type="text" id="cepat-nama-siswa" required placeholder="Masukkan nama siswa..." class="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                </div>
+                <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md transition duration-200">
+                    <i class="fa-solid fa-user-plus mr-1.5"></i> Simpan Siswa Baru
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1026,6 +1058,84 @@
                 teksInfo.innerHTML = '<span class="text-slate-500 text-xs italic">Siswa ini belum memiliki riwayat setoran.</span>';
             }
         });
+
+        // ==========================================
+        // 6.B. LOGIKA TAMBAH SISWA CEPAT OLEH GURU
+        // ==========================================
+        function bukaModalTambahSiswaCepat() {
+            const selectKelas = document.getElementById('input-kelas');
+            const idKelas = selectKelas.value;
+            
+            if (!idKelas) {
+                showToast('Pilih kelas terlebih dahulu di form sebelum menambah siswa!', 'error');
+                return;
+            }
+
+            const namaKelas = selectKelas.options[selectKelas.selectedIndex].text;
+            
+            document.getElementById('cepat-id-kelas').value = idKelas;
+            document.getElementById('cepat-nama-kelas').value = namaKelas;
+            document.getElementById('cepat-nama-siswa').value = '';
+            
+            document.getElementById('modal-tambah-siswa-cepat').classList.remove('hidden');
+        }
+
+        function tutupModalTambahSiswaCepat() {
+            document.getElementById('modal-tambah-siswa-cepat').classList.add('hidden');
+        }
+
+        document.getElementById('form-tambah-siswa-cepat').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id_kelas = document.getElementById('cepat-id-kelas').value;
+            const nama_siswa = document.getElementById('cepat-nama-siswa').value;
+
+            // Tampilkan state loading di button
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const originalBtnHtml = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1.5"></i> Menyimpan...';
+            btnSubmit.disabled = true;
+
+            // Insert dan langsung ambil data yang baru dibuat menggunakan .select()
+            const { data, error } = await supabaseClient
+                .from('siswa')
+                .insert([{ id_kelas, nama_siswa }])
+                .select(); 
+
+            btnSubmit.innerHTML = originalBtnHtml;
+            btnSubmit.disabled = false;
+
+            if (error) {
+                showToast('Gagal menambah siswa: ' + error.message, 'error');
+            } else {
+                showToast('Siswa baru berhasil ditambahkan!');
+                tutupModalTambahSiswaCepat();
+                
+                // Reload dropdown siswa dan otomatis pilih siswa baru tersebut
+                await reloadSiswaDropdownAndSelect(id_kelas, data[0].id);
+            }
+        });
+
+        async function reloadSiswaDropdownAndSelect(kelasId, newSiswaId) {
+            const selectSiswa = document.getElementById('input-siswa');
+            selectSiswa.innerHTML = '<option value="">Memuat Siswa...</option>';
+            selectSiswa.disabled = true;
+
+            const { data } = await supabaseClient.from('siswa').select('id, nama_siswa').eq('id_kelas', kelasId).order('nama_siswa');
+            selectSiswa.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>';
+            
+            if(data && data.length > 0) {
+                data.forEach(s => selectSiswa.innerHTML += `<option value="${s.id}">${s.nama_siswa}</option>`);
+                selectSiswa.disabled = false;
+                
+                if (newSiswaId) {
+                    selectSiswa.value = newSiswaId;
+                    // Memicu event 'change' agar memunculkan kotak info setoran terakhir
+                    selectSiswa.dispatchEvent(new Event('change'));
+                }
+            } else {
+                selectSiswa.innerHTML = '<option value="">-- Tidak Ada Siswa di Kelas Ini --</option>';
+            }
+        }
 
         document.getElementById('form-setoran').addEventListener('submit', async (e) => {
             e.preventDefault();
